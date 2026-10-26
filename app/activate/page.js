@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Create account · Scholar" };
 
 export default async function ActivatePage({ searchParams }) {
-  if (await currentUser()) redirect("/");
+  if (await currentUser()) redirect("/app");
   const { u } = await searchParams;
   const st = await one(`SELECT school FROM settings WHERE id = 1`);
   return <ActivateForm school={st?.school ?? "Scholar"} initialUsername={typeof u === "string" ? u.slice(0, 40) : ""} lang={await currentLang()} />;
