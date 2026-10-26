@@ -11,11 +11,13 @@ export default function ScholarApp({ initialState }) {
   }, [initialState]);
 
   const admin = initialState.role === "admin";
+  // Students and families get the friendly look; admin and teachers the classic one.
+  const look = initialState.role === "student" ? "look-friendly" : "look-classic";
   // Labels render in the saved language; data-i18n lets app.js switch them later.
   const t = makeT(initialState.lang);
   const label = (key) => ({ "aria-label": t(key), title: t(key), "data-i18n-label": key });
   return (
-    <>
+    <div className={`look ${look}`}>
       <div className="mobile-bar">
         <button className="icon-btn round" id="menuBtn" {...label("Open menu")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -76,6 +78,6 @@ export default function ScholarApp({ initialState }) {
       </div>
 
       <div className="modal-backdrop" id="modal" hidden></div>
-    </>
+    </div>
   );
 }

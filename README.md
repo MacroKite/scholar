@@ -1,8 +1,16 @@
 # Scholar — academic management
 
-A school management system built in the MacroKite visual style
-(same tokens, cards, sidebar, charts, light/dark theme). Feature ideas come
-from the sketches in `Photos/`.
+A school management system for Bangladeshi schools. Feature ideas come from
+the sketches in `Photos/`.
+
+It has two looks, each with a light and dark mode:
+
+- **Classic** for the admin, teachers and the sign-in pages: warm stone and
+  ivory, a charcoal sidebar, muted gold highlights and serif headings.
+- **Friendly** for students and families: white cards on soft blue-grey, a
+  navy sidebar with icons over labels, violet and pink accents, rounded type,
+  and a dashboard with a welcome banner, subject progress and a "Coming up"
+  column of exams, fees and homework.
 
 It's a Next.js app (JavaScript) backed by Postgres. Everyone signs in with
 their own account. The admin, teachers, and families (a student together
@@ -319,5 +327,5 @@ To hide the demo accounts on the sign-in page, set
 what "today" is on the server. To send SMS, add `BULKSMSBD_API_KEY` and
 `BULKSMSBD_SENDER_ID` (see "SMS to guardians").
 
-Theme and colour palette are saved per browser. Everything else is stored in
+Light or dark mode is saved per browser. Everything else is stored in
 the database and shared.
