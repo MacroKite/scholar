@@ -1,0 +1,5 @@
+# Not needed on the live site: design sketches, editor settings, local data.
+Photos/
+.claude/
+.data/
+.env*

@@ -1,0 +1,20 @@
+{
+  "name": "scholar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 5180",
+    "build": "next build",
+    "start": "next start -p 5180",
+    "db:setup": "node scripts/db.mjs setup",
+    "db:reset": "node scripts/db.mjs reset"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.11",
+    "next": "^16.4.3",
+    "pg": "^8.23.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

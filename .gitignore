@@ -1,0 +1,21 @@
+# Dependencies and build output
+node_modules
+.next
+next-env.d.ts
+
+# Local database (PGlite)
+.data
+
+# Vercel link + private access token (never commit)
+.vercel
+.env*
+!.env.example
+
+# Local-only editor/agent settings
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# Knowledge graph (rebuild with /graphify)
+graphify-out/
