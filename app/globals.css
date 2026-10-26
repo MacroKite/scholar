@@ -772,12 +772,45 @@ button.item:hover, a.item:hover { background: var(--surface-2); }
 .toast.out { opacity: 0; transform: translateY(-6px); }
 
 /* ---------- Report card print ---------- */
+/* ---------- Printed sheets: receipts, result cards, tabulation ---------- */
+.sheet { background: #fff; color: #111; border-radius: 16px; padding: 34px 38px; max-width: 820px; margin: 0 auto 18px; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
+.sheet.landscape { max-width: 1180px; }
+.sheet.receipt { max-width: 560px; }
+.sheet-head { text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 16px; }
+.sheet-school { font-size: 22px; font-weight: 700; }
+.sheet-title { font-size: 15px; font-weight: 600; margin-top: 4px; text-transform: uppercase; letter-spacing: .04em; }
+.sheet-sub { font-size: 13px; color: #444; margin-top: 2px; }
+.sheet-info { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 14px; font-size: 13px; margin: 0 0 16px; }
+.sheet-info dt { color: #555; }
+.sheet-info dd { margin: 0; font-weight: 600; }
+.sheet-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sheet-tbl th, .sheet-tbl td { border: 1px solid #999; padding: 6px 8px; text-align: left; }
+.sheet-tbl th { background: #f1f1f1; font-weight: 600; }
+.sheet-tbl .num { text-align: center; }
+.sheet-tbl .fail { color: #b00020; font-weight: 700; }
+.sheet-tbl tr.total td { font-weight: 700; background: #fafafa; }
+.sheet-tbl small { display: block; font-size: 10px; color: #555; font-weight: 400; }
+.sheet-tbl.tab { font-size: 11px; }
+.sheet-tbl.tab th, .sheet-tbl.tab td { padding: 4px 5px; }
+.sheet-summary { display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 14px; font-size: 13px; }
+.sheet-note { margin-top: 10px; font-size: 12px; color: #444; }
+.sheet-signs { display: flex; justify-content: space-between; gap: 30px; margin-top: 56px; font-size: 12px; }
+.sheet-signs > div { flex: 1; text-align: center; }
+.sheet-signs span { display: block; border-top: 1px solid #333; margin-bottom: 4px; }
+.muted-row td { opacity: .55; }
+.sms-body { max-width: 420px; font-size: 13px; white-space: normal; }
+
+@page { size: A4; margin: 12mm; }
+@page landscape { size: A4 landscape; margin: 10mm; }
 @media print {
   .sidebar, .mobile-bar, .no-print, #toasts { display: none !important; }
   .app { padding: 0; height: auto; display: block; }
   .main { overflow: visible; }
   body { background: #fff; }
   .card { border: 1px solid #ddd; break-inside: avoid; }
+  .page { padding: 0 !important; }
+  .sheet { box-shadow: none; border-radius: 0; padding: 0; max-width: none; margin: 0; break-after: page; }
+  .sheet.landscape { page: landscape; }
 }
 
 /* ---------- Responsive ---------- */

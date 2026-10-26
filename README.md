@@ -87,9 +87,9 @@ username or address are refused for a while.
 
 | Role | Pages | Can see |
 | --- | --- | --- |
-| Admin | Dashboard, Class Setup (with class teachers), Grading System, Timetable (editable), Attendance (any section), Exams, Results (publish), Students, Teachers, Fees & Payments, Notice Board, Insights, Settings | Everything |
+| Admin | Dashboard, Class Setup (with class teachers), Grading System, Promotion, Timetable (editable), Attendance (any section), Exams, Results (publish, print result cards and tabulation sheets), Students, Teachers, Fees & Payments (dues, receipts), Notice Board, SMS, Settings | Everything |
 | Teacher | Dashboard (today's classes, pending tasks), Attendance (class teachers only), Exams (enter marks), Timetable, Students, Notice Board | The students, attendance and marks of the sections they teach; guardians' phone numbers only for sections they're class teacher of; no fees |
-| Student | Dashboard (classes, exams, attendance, GPA, fees due), Class Routine, Attendance calendar, Results, Report Card (printable), Fees (pay), Notice Board (student and guardian notices) | Their own records; results only once published |
+| Student | Dashboard (classes, exams, attendance, GPA, fees due), Class Routine, Attendance calendar, Results, Report Card (printable result card), Fees (dues, pay, receipts), Notice Board (student and guardian notices) | Their own records; results only once published |
 
 ### Language: English and বাংলা
 
@@ -172,6 +172,86 @@ The demo school runs two shifts: Classes One–Five in the morning
 Nine A and Ten A are Science, Nine B is Business Studies and Ten B is
 Humanities.
 
+### Fees: dues, discounts and money receipts
+
+Each student owes **charges**: monthly tuition (added automatically every
+month at the class's fee, due on the 10th), plus any admission, session, exam
+or other fee the admin adds for everyone, a class, a section or one student.
+The demo school has a session fee in January and a half-yearly exam fee.
+
+- **Discounts:** a student can have a standing tuition discount (25%, half,
+  75% or a free studentship), set on their profile. Any single fee can also
+  get a discount, for example half the session fee waived.
+- **Payments and receipts:** **Collect payment** takes money against the
+  dues the admin ticks. Paying less than the total is fine: the rest stays
+  due, oldest first. Every payment gets the next receipt number and a
+  printable **money receipt**. A receipt entered by mistake can be
+  cancelled, which makes the amount due again.
+- **Fees & Payments** shows who owes what (by class), every receipt by month,
+  and this month's collection. **SMS reminders** texts every guardian who
+  owes fees.
+- Families see their dues and receipts, and can pay online (a demo: no money
+  moves).
+
+Databases from before this change are moved over automatically: each old
+monthly fee becomes a tuition charge, and each paid month a payment with a
+receipt number.
+
+### SMS to guardians
+
+The **SMS** page (admin) sends messages to guardians' phones:
+
+- **Automatically:** when a student is marked absent in today's roll call
+  (once a day per student), and when exam results are published (each
+  student's GPA and grade, once per exam). Both can be turned off.
+- **Fee reminders** from Fees & Payments, **notices** (tick "Also send by
+  SMS" when posting), and the admin's own messages to all guardians, a class
+  or a section.
+- SMS are written in Bangla (default) or English. The page counts
+  characters and SMS parts (a Bangla SMS holds 70 characters, English 160).
+
+Every message is kept in the **outbox** with its status. Messages are sent
+through [BulkSMSBD](https://bulksmsbd.net) only when the server has
+`BULKSMSBD_API_KEY` and `BULKSMSBD_SENDER_ID` set. Without them nothing
+leaves the server, and the outbox marks messages "Not sent". Guardians'
+numbers must be Bangladeshi mobile numbers (01XXXXXXXXX, with or without +88);
+others are marked "No number". Check BulkSMSBD's current API documentation
+for your account: Scholar posts `api_key`, `senderid`, `number` and `message`
+to `https://bulksmsbd.net/api/smsapi`, with `type=unicode` for Bangla and
+`text` otherwise, and treats response code 202 as sent. `BULKSMSBD_URL`
+overrides the address.
+
+### Printed result cards and tabulation sheets
+
+From **Results** the admin prints, for a section and exam:
+
+- **Result cards:** one A4 page per student with marks per part (CQ, MCQ,
+  practical), grade, point, GPA, result, position and attendance, and
+  signature lines for the class teacher, guardian and principal.
+- **A tabulation sheet:** the whole section on one landscape page, with each
+  subject's marks and grade, total, GPA, grade and position, and how many
+  passed.
+
+Families print their own result card from the Report Card page. Everything
+prints in the language the app is showing.
+
+### Year-end promotion
+
+**Academic → Promotion** moves students up a class for the new year, going
+by an exam's results (the annual exam by default):
+
+- Students who passed are promoted. A failed student stays in their class
+  unless the admin ticks them to promote **on consideration**.
+- Students keep their group where the next class has a section for it
+  (Science to Science), otherwise the same section letter; the admin can pick
+  another section for any student.
+- New roll numbers in each section go by merit (GPA, then total marks).
+  Students repeating the class come after the promoted ones.
+- Students of the top class pass out: they leave the lists but stay in the
+  database.
+- The academic year then moves on by one. This year's exams and results stay
+  in the database but are no longer shown, and nothing is published yet.
+
 ### Optional feature: Homework (off by default)
 
 Homework only helps if teachers post it every day, so each school turns it
@@ -206,12 +286,15 @@ components/ScholarApp.js       sidebar/shell; mounts the client app
 lib/client/app.js              the pages, forms and actions (runs in the browser)
 lib/school/calendar.js         class names, subjects, date helpers (shared)
 lib/school/rules.js            groups, religion, 4th subject, exam parts, GPA, shifts (shared)
+lib/school/results.js          a student's result, grades, year-end promotion plan (shared)
 lib/school/seed.js             the demo school
 lib/server/
   db.js                        Postgres (pg) or PGlite; creates tables, seeds if empty
   schema.js                    tables
   state.js                     per-role view of the data
   actions.js                   permission checks + writes, one transaction each
+  fees.js                      charges, payments and receipt numbers
+  sms.js                       SMS outbox and BulkSMSBD delivery
   auth.js, accounts.js         sessions, passwords, usernames
 scripts/db.mjs                 db:setup / db:reset
 ```
@@ -233,7 +316,8 @@ redraws, so every page always shows what's in the database.
 On the first request, the app creates the tables and seeds the demo school.
 To hide the demo accounts on the sign-in page, set
 `SHOW_DEMO_ACCOUNTS=false`. `SCHOOL_TIMEZONE` (default `Asia/Dhaka`) decides
-what "today" is on the server.
+what "today" is on the server. To send SMS, add `BULKSMSBD_API_KEY` and
+`BULKSMSBD_SENDER_ID` (see "SMS to guardians").
 
 Theme and colour palette are saved per browser. Everything else is stored in
 the database and shared.
