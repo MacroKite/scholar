@@ -1,5 +1,5 @@
 import { sitePage, PageHead } from "@/components/site/parts.js";
-import { galleryOf } from "@/lib/school/website.js";
+import { photosOf } from "@/components/site/photos.js";
 
 export async function generateMetadata() {
   const { t, data } = await sitePage();
@@ -9,21 +9,22 @@ export async function generateMetadata() {
 export default async function Gallery() {
   const { t, data } = await sitePage();
   if (!data) return null;
-  const photos = galleryOf(data.website);
+  const photos = photosOf(data.website).life;
   return (
     <>
       <PageHead eyebrow={t("Gallery")} title={t("School life in pictures")} />
       <div className="site-wrap site-body">
-        {photos.length === 0 ? <p className="site-note">{t("Photos will be added soon.")}</p> : (
-          <div className="site-gallery">
-            {photos.map((p, i) => (
+        <div className="site-gallery">
+          {photos.map((p, i) => {
+            const caption = p.stock ? t(p.caption) : p.caption;
+            return (
               <figure key={i} className="site-photo">
-                <img src={p.url} alt={p.caption || data.school} loading="lazy" />
-                {p.caption && <figcaption>{p.caption}</figcaption>}
+                <img src={p.url} alt={caption || data.school} loading="lazy" />
+                {caption && <figcaption>{caption}</figcaption>}
               </figure>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
     </>
   );

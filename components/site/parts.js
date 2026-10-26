@@ -3,6 +3,7 @@
 import { makeT } from "@/lib/i18n/index.js";
 import { currentLang } from "@/lib/server/session.js";
 import { siteData } from "@/lib/server/site.js";
+import { photosOf } from "./photos.js";
 
 // The page's language, its t(), and the school's public data.
 export async function sitePage() {
@@ -16,15 +17,30 @@ export async function sitePage() {
   return { lang, t, data, date, num, time };
 }
 
-export function PageHead({ eyebrow, title, children }) {
+// The banner at the top of the inner pages: a school photo under green,
+// with a trail back home.
+export async function PageHead({ eyebrow, title, children }) {
+  const { t, data } = await sitePage();
+  const photo = data ? photosOf(data.website).banner : null;
   return (
-    <section className="site-pagehead">
+    <section className="site-pagehead" style={photo ? { "--banner": `url("${photo.replace(/["\\\s]/g, encodeURIComponent)}")` } : undefined}>
       <div className="site-wrap">
-        {eyebrow && <div className="site-eyebrow">{eyebrow}</div>}
+        <div className="site-crumbs"><a href="/">{t("Home")}</a>{eyebrow && <><span>/</span>{eyebrow}</>}</div>
         <h1>{title}</h1>
         {children && <p>{children}</p>}
       </div>
     </section>
+  );
+}
+
+// The school's crest: a shield with the first letter of its name.
+export function Crest({ school, size = 52 }) {
+  return (
+    <svg className="site-crest" width={size} height={size * 1.1} viewBox="0 0 48 53" aria-hidden="true">
+      <path d="M24 2 44 8v16c0 13-9 22-20 27C13 46 4 37 4 24V8z" fill="var(--g-800)" stroke="var(--gold)" strokeWidth="2.5" />
+      <path d="M24 7 39 11.5V24c0 10-7 17-15 21-8-4-15-11-15-21V11.5z" fill="none" stroke="var(--gold)" strokeWidth=".8" opacity=".6" />
+      <text x="24" y="31" textAnchor="middle" fill="var(--gold)" fontFamily="var(--display)" fontWeight="700" fontSize="20">{school.slice(0, 1)}</text>
+    </svg>
   );
 }
 
@@ -41,7 +57,27 @@ const PATHS = {
   award: "M12 15a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM8.5 14 7 21l5-3 5 3-1.5-7",
   megaphone: "M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1zM17 8a5 5 0 0 1 0 8",
   facebook: "M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z",
+  left: "m15 18-6-6 6-6",
+  right: "m9 18 6-6-6-6",
+  calendar: "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM16 2v4M8 2v4M3 10h18",
+  flask: "M9 3h6M10 3v6l-5.6 9.5A2 2 0 0 0 6.1 21.5h11.8a2 2 0 0 0 1.7-3L14 9V3M7 15h10",
+  monitor: "M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8 20h8M12 16v4",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  heart: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z",
+  bus: "M7 3h10a2 2 0 0 1 2 2v12H5V5a2 2 0 0 1 2-2zM5 11h14M8 20v-3M16 20v-3M8 14h.01M16 14h.01",
+  home: "M3 11 12 3l9 8M5 9.5V21h14V9.5M10 21v-6h4v6",
+  ball: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7l4 3-1.5 5h-5L8 10z",
+  moon: "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z",
+  bulb: "M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z",
 };
+// An icon that suits a facility the admin typed in (English or Bangla).
+const FACILITY_ICONS = [
+  [/computer|ict|internet|কম্পিউটার|আইসিটি/i, "monitor"], [/lab|science|বিজ্ঞান|ল্যাব|গবেষণা/i, "flask"],
+  [/librar|book|লাইব্রেরি|গ্রন্থাগার|বই/i, "book"], [/cctv|guard|secur|নিরাপত্তা|সিসি/i, "shield"],
+  [/aid|doctor|medic|health|চিকিৎসা|ডাক্তার/i, "heart"], [/bus|transport|পরিবহন|বাস/i, "bus"],
+  [/play|game|sport|field|খেলা|মাঠ/i, "ball"], [/prayer|mosque|নামাজ|মসজিদ/i, "moon"], [/common room|কমন রুম/i, "home"],
+];
+export const facilityIcon = (text) => FACILITY_ICONS.find(([re]) => re.test(text))?.[1] ?? "check";
 export const Icon = ({ name, size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PATHS[name]} /></svg>
 );
@@ -64,6 +100,20 @@ export function SchoolArt() {
       <path className="f" stroke="none" d="M248 30l2.5 7 7 2.5-7 2.5-2.5 7-2.5-7-7-2.5 7-2.5z" />
       <path className="f" stroke="none" d="M66 40l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
     </svg>
+  );
+}
+
+// A named officer (information officer, appeal authority, GRS or NIS focal
+// point) with their post and how to reach them.
+export function Officer({ title, o }) {
+  return (
+    <div className="site-card site-officer">
+      <div className="site-eyebrow">{title}</div>
+      <b>{o.name}</b>
+      {o.post && <span>{o.post}</span>}
+      {o.phone && <a href={`tel:${o.phone.replace(/[^\d+]/g, "")}`}><Icon name="phone" size={15} />{o.phone}</a>}
+      {o.email && <a href={`mailto:${o.email}`}><Icon name="mail" size={15} />{o.email}</a>}
+    </div>
   );
 }
 

@@ -4,7 +4,8 @@ import { query } from "@/lib/server/db.js";
 import { badRequestOrigin, jsonError } from "@/lib/server/session.js";
 import { blocked, recordFailure, throttleKeys } from "@/lib/server/throttle.js";
 
-// An admission or contact enquiry from the public website. No sign-in, so
+// An admission or contact enquiry, or a request for information under the
+// Right to Information Act, from the public website. No sign-in, so
 // each address may send only a few in a quarter of an hour.
 export async function POST(request) {
   const bad = badRequestOrigin(request);
@@ -14,7 +15,7 @@ export async function POST(request) {
   const body = await request.json().catch(() => ({}));
   const text = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
   const name = text(body.name, 80), phone = text(body.phone, 30), className = text(body.className, 40), message = text(body.message, 2000);
-  const kind = body.kind === "admission" ? "admission" : "contact";
+  const kind = ["admission", "rti"].includes(body.kind) ? body.kind : "contact";
   if (!name || !phone) return jsonError("Please give your name and phone number.", 400, request);
   if (!/^[+0-9 ()-]{6,}$/.test(phone)) return jsonError("That phone number doesn't look right.", 400, request);
   recordFailure(keys);
