@@ -56,6 +56,17 @@ export default async function Academics() {
           </section>
         )}
 
+        {data.website.showStudentCounts && data.enrolment.length > 0 && (
+          <section className="site-section">
+            <h2>{t("Students")}</h2>
+            <div className="site-card site-table"><table className="tbl"><thead><tr><th>{t("Class")}</th><th className="r">{t("Boys")}</th><th className="r">{t("Girls")}</th><th className="r">{t("Total")}</th></tr></thead>
+              <tbody>{classes.map((c) => {
+                const n = (g) => data.enrolment.filter((e) => e.classId === c.id && (!g || e.gender === g)).reduce((s, e) => s + e.n, 0);
+                return <tr key={c.id}><td className="strong">{t.data(c.name)}</td><td className="r">{t.digits(String(n("Male")))}</td><td className="r">{t.digits(String(n("Female")))}</td><td className="r strong">{t.digits(String(n()))}</td></tr>;
+              })}</tbody></table></div>
+          </section>
+        )}
+
         <section className="site-section">
           <h2>{t("School hours")}</h2>
           <p className="site-note">{t("The school is open on {days}.", { days: schedule.days.map(weekday).join(", ") })}</p>
