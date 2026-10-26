@@ -22,7 +22,7 @@ export default function ActivateForm({ school, initialUsername, lang }) {
     setError("");
     try {
       const res = await fetch("/api/auth/activate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, code, password }) });
-      if (res.ok) { window.location.href = "/"; return; }
+      if (res.ok) { window.location.href = "/app"; return; }
       setError((await res.json().catch(() => ({}))).error || t("Couldn't create the account. Try again."));
     } catch {
       setError(t("Couldn't reach the server. Check your connection."));

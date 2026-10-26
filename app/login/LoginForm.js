@@ -18,7 +18,7 @@ export default function LoginForm({ school, demo, demoPassword, lang }) {
     setPending(false);
     try {
       const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
-      if (res.ok) { window.location.href = "/"; return; }
+      if (res.ok) { window.location.href = "/app"; return; }
       const data = await res.json().catch(() => ({}));
       setError(data.error || t("Couldn't sign in. Try again."));
       setPending(!!data.pending);
@@ -49,6 +49,7 @@ export default function LoginForm({ school, demo, demoPassword, lang }) {
         <button className="btn primary login-go" disabled={busy}>{busy ? t("Signing in…") : t("Sign in")}</button>
         <p className="hint">{t("Teachers sign in with their initials. Students and their guardians share one family account: sign in with the student ID (e.g. s113).")}</p>
         <p className="login-switch">{t("New here?")} <a href="/activate">{t("Create your account")}</a></p>
+        <p className="login-switch"><a href="/">{t("Back to the school website")}</a></p>
       </form>
 
       {demo && (

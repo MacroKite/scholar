@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign in · Scholar" };
 
 export default async function LoginPage() {
-  if (await currentUser()) redirect("/");
+  if (await currentUser()) redirect("/app");
   const st = await one(`SELECT s.school, s.admin_name, s.demo, t.name AS teacher, st.name AS student, st.guardian
                           FROM settings s LEFT JOIN teachers t ON t.id = s.demo->>'teacher' LEFT JOIN students st ON st.id = s.demo->>'student'`);
   // One account per role from the demo school, to try the app quickly.

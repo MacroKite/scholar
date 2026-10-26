@@ -26,7 +26,8 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5180 and sign in.
+Then open http://localhost:5180 for the school's public website, or
+http://localhost:5180/app (or **Sign in** on the website) for the app.
 
 There's nothing to set up for local use. Without `DATABASE_URL`, the app uses
 PGlite, a full Postgres that runs inside Node and keeps its files in
@@ -46,6 +47,36 @@ To use your own Postgres instead, copy `.env.example` to `.env.local` and set
 With PGlite, stop `npm run dev` before running the `db:` commands, because
 only one process can open the database at a time. Admins can also reset the
 data from **Settings → Reset demo data** while the app is running.
+
+## School website
+
+The address `/` is the school's public website; the app itself is at `/app`.
+The website uses the classic look and works in English and Bangla, on phones
+too. Its pages are drawn on the server, so they load fast on mobile data and
+can be found by search engines.
+
+| Page | What it shows |
+| --- | --- |
+| Home | Name, EIIN, board, tagline, admission banner, latest notices, totals (students, teachers, classes, SSC pass rate), principal's message, mission, facilities, SSC results |
+| About | History, mission and vision, the principal's full message, managing committee, achievements, SSC results, facilities |
+| Academics | Classes and sections, the subjects of each group in Classes 9–10, school days and shift times, the exam routine |
+| Admission | Open or closed, session and last date, who can apply, how to apply, documents needed, monthly tuition by class, and an admission enquiry form |
+| Teachers | Names and subjects (can be turned off) |
+| Notices | Notices posted for **Everyone**, each with its own page |
+| Gallery | Photos, once the school adds some |
+| Contact | Address, phone, email, office hours, Facebook, a Google map and a contact form |
+
+Notices, teachers, classes, fees, school hours and the exam routine come
+straight from Scholar. The admin fills in the rest on the **Website** page in
+the app: school details (EIIN, school code, board, address, phone, map),
+principal's message, history, mission and vision, facilities, managing
+committee, achievements, admission details, SSC results and photo addresses.
+Lists are typed one item per line.
+
+Enquiries from the Admission and Contact forms appear on the Website page,
+where they can be marked as followed up. Each address can send only a few in a
+quarter of an hour. The website never shows anything about an individual
+student, and teachers' phone numbers and emails stay private.
 
 ## Accounts
 
@@ -284,17 +315,21 @@ only pay its own fees.
 ```
 app/
   layout.js, globals.css       page shell, theme, styles
-  page.js                      signed-in app (redirects to /login otherwise)
+  (site)/                      the public school website (/, /about, /admission, …)
+  app/page.js                  the signed-in app at /app (redirects to /login otherwise)
   login/                       sign-in page
   activate/                    create account with an activation code
   api/auth/login|logout|activate   sessions, account activation
   api/state                    GET: everything the signed-in user may see
   api/actions                  POST { op, input }: every change the app makes
+  api/enquiry                  POST: an admission or contact enquiry from the website
 components/ScholarApp.js       sidebar/shell; mounts the client app
+components/site/               the website's menu, language switch, enquiry form, shared parts
 lib/client/app.js              the pages, forms and actions (runs in the browser)
 lib/school/calendar.js         class names, subjects, date helpers (shared)
 lib/school/rules.js            groups, religion, 4th subject, exam parts, GPA, shifts (shared)
 lib/school/results.js          a student's result, grades, year-end promotion plan (shared)
+lib/school/website.js          the website's own content and its defaults
 lib/school/seed.js             the demo school
 lib/server/
   db.js                        Postgres (pg) or PGlite; creates tables, seeds if empty
@@ -303,6 +338,7 @@ lib/server/
   actions.js                   permission checks + writes, one transaction each
   fees.js                      charges, payments and receipt numbers
   sms.js                       SMS outbox and BulkSMSBD delivery
+  site.js                      what the public website may show
   auth.js, accounts.js         sessions, passwords, usernames
 scripts/db.mjs                 db:setup / db:reset
 ```
