@@ -7,11 +7,13 @@ export const metadata = {
   description: "Academic management for schools: classes, timetable, attendance, exams, results and fees.",
 };
 
-// Apply the saved theme before first paint so there's no light/dark flash.
+// Apply the saved theme and colour theme before first paint so there's no flash.
 const THEME_SCRIPT = `try {
   var pref = localStorage.getItem("edulytics-theme") || "system";
   var dark = pref === "dark" || (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  var pal = localStorage.getItem("edulytics-palette");
+  if (pal && pal !== "original") document.documentElement.dataset.palette = pal;
 } catch (e) { document.documentElement.dataset.theme = "light"; }`;
 
 export default async function RootLayout({ children }) {
