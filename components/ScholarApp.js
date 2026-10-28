@@ -11,6 +11,8 @@ export default function ScholarApp({ initialState }) {
   }, [initialState]);
 
   const admin = initialState.role === "admin";
+  // Only a demo school's admin can reset it to the sample data.
+  const canReset = admin && initialState.isDemo;
   // Students and families get the friendly look; admin and teachers the classic one.
   const look = initialState.role === "student" ? "look-friendly" : "look-classic";
   // Labels render in the saved language; data-i18n lets app.js switch them later.
@@ -52,7 +54,7 @@ export default function ScholarApp({ initialState }) {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>
                 <span data-i18n="Log out">{t("Log out")}</span>
               </button>
-              {admin && (
+              {canReset && (
                 <button type="button" role="menuitem" data-action="reset-data" className="danger">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg>
                   <span data-i18n="Reset demo data">{t("Reset demo data")}</span>

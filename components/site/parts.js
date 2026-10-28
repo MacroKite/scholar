@@ -1,7 +1,8 @@
 // Scholar — pieces shared by the website's pages (server components).
 
+import { notFound } from "next/navigation";
 import { makeT } from "@/lib/i18n/index.js";
-import { currentLang } from "@/lib/server/session.js";
+import { currentLang, currentSchool } from "@/lib/server/session.js";
 import { siteData } from "@/lib/server/site.js";
 import { photosOf } from "./photos.js";
 
@@ -9,7 +10,9 @@ import { photosOf } from "./photos.js";
 export async function sitePage() {
   const lang = await currentLang();
   const t = makeT(lang);
-  const data = await siteData();
+  const school = await currentSchool();
+  if (!school) notFound();
+  const data = await siteData(school.id);
   // Dates in the page's language; Bangla dates use Bangla digits.
   const date = (iso, opts = { day: "numeric", month: "long", year: "numeric" }) => new Date(iso + "T00:00:00").toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", opts);
   const num = (n) => t.digits(String(n));

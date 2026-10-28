@@ -1,18 +1,20 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import LoginForm from "./LoginForm.js";
-import { one } from "@/lib/server/db.js";
+import { forSchool } from "@/lib/server/db.js";
 import { DEMO_PASSWORD, usernameFor } from "@/lib/server/accounts.js";
-import { currentLang, currentUser } from "@/lib/server/session.js";
+import { currentLang, currentSchool, currentUser } from "@/lib/server/session.js";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign in · Scholar" };
 
 export default async function LoginPage() {
+  const school = await currentSchool();
+  if (!school) notFound();
   if (await currentUser()) redirect("/app");
-  const st = await one(`SELECT s.school, s.admin_name, s.demo, t.name AS teacher, st.name AS student, st.guardian
-                          FROM settings s LEFT JOIN teachers t ON t.id = s.demo->>'teacher' LEFT JOIN students st ON st.id = s.demo->>'student'`);
-  // One account per role from the demo school, to try the app quickly.
-  const demo = process.env.SHOW_DEMO_ACCOUNTS === "false" || !st ? null : [
+  const st = await forSchool(school.id, (q) => q.one(`SELECT s.school, s.admin_name, s.demo, t.name AS teacher, st.name AS student, st.guardian
+                          FROM settings s LEFT JOIN teachers t ON t.id = s.demo->>'teacher' LEFT JOIN students st ON st.id = s.demo->>'student'`));
+  // A demo school shows one account per role, to try the app quickly. A real school never does.
+  const demo = process.env.SHOW_DEMO_ACCOUNTS === "false" || !school.demo || !st ? null : [
     { role: "Admin", name: st.admin_name, username: usernameFor("admin") },
     st.teacher && { role: "Teacher", name: st.teacher, username: usernameFor("teacher", st.demo.teacher) },
     st.student && { role: "Student", name: st.student, username: usernameFor("student", st.demo.student) },
