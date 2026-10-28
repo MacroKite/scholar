@@ -169,6 +169,60 @@ try {
     await assert.rejects(runAction(bAdmin.user, "demo.reset", {}), (e) => e instanceof ActionError && e.status === 403);
   });
 
+  console.log("\nFees by bKash / Nagad");
+  const refused = (p, status) => assert.rejects(p, (e) => e instanceof ActionError && (!status || e.status === status));
+  const due = async () => (await buildState(family.user)).charges.reduce((a, c) => a + Math.max(0, c.amount - c.discount - c.paid), 0);
+  await check("the admin sets the school's numbers; a wrong number is refused", async () => {
+    await refused(runAction(admin.user, "payments.setup", { bkash: "12345" }));
+    await runAction(admin.user, "payments.setup", { bkash: "+8801711-223344", nagad: "", rocket: "", note: "Use Payment" });
+    assert.equal((await buildState(family.user)).payNumbers.bkash, "01711223344");
+  });
+  let claimId;
+  await check("a family's claim is checked: wallet, amount, transaction ID", async () => {
+    const owed = await due();
+    assert.ok(owed > 0, "the family owes something");
+    await refused(runAction(family.user, "fee.claim", { method: "nagad", amount: 100, trxId: "9KD7XH2PQ1" }));          // the school has no Nagad
+    await refused(runAction(family.user, "fee.claim", { method: "bkash", amount: owed + 1, trxId: "9KD7XH2PQ1" }));    // more than is due
+    await refused(runAction(family.user, "fee.claim", { method: "bkash", amount: 100, trxId: "12" }));                 // not a transaction ID
+    claimId = (await runAction(family.user, "fee.claim", { method: "bkash", amount: 100, trxId: "9kd7-xh2pq1", sender: "01811000222" })).id;
+    await refused(runAction(family.user, "fee.claim", { method: "bkash", amount: 100, trxId: "9KD7XH2PQ1" }));         // the same transaction ID twice
+    await refused(runAction(family.user, "fee.claim", { method: "bkash", amount: owed - 99, trxId: "ZZ99YY88XX" }));   // more than is left once the waiting one counts
+    const mine = (await buildState(family.user)).claims;
+    assert.equal(mine.length, 1);
+    assert.deepEqual([mine[0].status, mine[0].trxId], ["pending", "9KD7XH2PQ1"]);
+  });
+  await check("only the office can approve, and nothing counts until it does", async () => {
+    const before = await due();
+    await refused(runAction(family.user, "fee.claimDecide", { id: claimId, approve: true }), 403);
+    assert.equal(await due(), before);
+    const r = await runAction(admin.user, "fee.claimDecide", { id: claimId, approve: true });
+    assert.equal(await due(), before - 100);
+    const st = await buildState(family.user);
+    const pay = st.payments.find((p) => p.receiptNo === r.receiptNo);
+    assert.ok(pay, "the family sees the receipt");
+    assert.deepEqual([pay.amount, pay.method, pay.receivedBy], [100, "bKash", "online"]);
+    assert.match(pay.note, /TrxID 9KD7XH2PQ1/);
+    assert.equal(st.claims[0].status, "approved");
+    await refused(runAction(admin.user, "fee.claimDecide", { id: claimId, approve: true }), 409);  // not twice
+  });
+  await check("a rejected claim tells the family why, and makes no receipt", async () => {
+    const id = (await runAction(family.user, "fee.claim", { method: "bkash", amount: 50, trxId: "AB12CD34EF" })).id;
+    const receipts = (await buildState(family.user)).payments.length;
+    await refused(runAction(admin.user, "fee.claimDecide", { id, approve: false, reason: "" }));
+    await runAction(admin.user, "fee.claimDecide", { id, approve: false, reason: "Not in our statement" });
+    const st = await buildState(family.user);
+    const c = st.claims.find((x) => x.id === id);
+    assert.deepEqual([c.status, c.reason], ["rejected", "Not in our statement"]);
+    assert.equal(st.payments.length, receipts);
+    // A rejected transaction ID can be sent again (e.g. after a typo was fixed).
+    const again = (await runAction(family.user, "fee.claim", { method: "bkash", amount: 50, trxId: "AB12CD34EF" })).id;
+    await runAction(family.user, "fee.claimCancel", { id: again });
+    assert.equal((await buildState(family.user)).claims.find((x) => x.id === again).status, "cancelled");
+  });
+  await check("the other school never sees these claims", async () => {
+    assert.equal((await forSchool(B, (q) => q.rows(`SELECT 1 FROM payment_claims`))).length, 0);
+  });
+
   console.log("\nRunning the service");
   const P = await import("../lib/server/platform.js");
   const { deliverPending, smsAccount } = await import("../lib/server/sms.js");

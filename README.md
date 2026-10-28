@@ -293,9 +293,32 @@ The demo school has a session fee in January and a half-yearly exam fee.
 - **Fees & Payments** shows who owes what (by class), every receipt by month,
   and this month's collection. **SMS reminders** texts every guardian who
   owes fees.
-- Families see their dues and receipts. In a demo school they can also try
-  paying online (no money moves). A real school has no online payment yet:
-  families pay at the office, which records it with **Collect payment**.
+- Families see their dues and receipts, and pay at the office or from their
+  phones by bKash, Nagad or Rocket (below). A demo school without wallet
+  numbers keeps a pretend "Pay" button instead (no money moves).
+
+#### Paying from a phone: bKash, Nagad, Rocket
+
+1. The admin enters the school's wallet numbers under **Settings → Fees by
+   bKash, Nagad or Rocket**, with a line of instructions for families (e.g.
+   "Use Payment and write the student ID as the reference").
+2. The family sends the money from their own wallet app, then presses **Pay
+   by bKash** on their Fees page and enters the amount and the transaction ID
+   from the confirmation SMS. It shows as **Waiting for the office**, and
+   counts against what's due, so the Pay button doesn't offer the same
+   amount twice.
+3. The office opens **Fees & Payments → Online payments** (the bell says
+   when something is waiting), finds the transaction in the school's own
+   bKash/Nagad statement, and presses **Approve** (twice, to be sure). That
+   makes an ordinary receipt marked "Paid online", with the transaction ID on
+   it, and the dues go down. Or **Reject** with a reason the family sees.
+
+Nothing counts until the office approves it. A transaction ID can be waiting
+or approved only once per school (a rejected one can be sent again, e.g.
+after fixing a typo), a family can have three payments waiting at most, and
+a payment can't be for more than is due. The money goes straight to the
+school's own wallet; Scholar never handles it. A payment gateway that
+confirms payments automatically can be added later, school by school.
 
 Databases from before this change are moved over automatically: each old
 monthly fee becomes a tuition charge, and each paid month a payment with a

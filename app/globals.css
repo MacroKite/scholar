@@ -916,6 +916,12 @@ button.item:hover, a.item:hover { background: var(--surface-2); }
 .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; margin-top: 6px; }
 .notif-empty { padding: 26px 12px; text-align: center; font-size: 13px; color: var(--muted); }
 
+/* ---------- Paying fees by bKash / Nagad / Rocket ---------- */
+.pay-steps { margin: 0 0 18px; padding-left: 20px; display: grid; gap: 12px; color: var(--text-2); line-height: 1.5; }
+.pay-steps b { color: var(--text); }
+.pay-number { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text); }
+.pay-number b { font-size: 16px; letter-spacing: .02em; }
+
 /* ---------- Colour theme picker (Settings) ---------- */
 .palettes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
 .palette { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 16px; border: 1.5px solid var(--border-strong); text-align: left; transition: border-color .15s, background .15s; }
