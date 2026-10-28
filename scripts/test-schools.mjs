@@ -101,6 +101,22 @@ try {
   // RESET ROLE or set another app.school_id. Row-level security guards
   // against mistakes in our queries, not against someone running SQL of
   // their own; every query passes values as parameters ($1), so nobody can.
+  await check("a hosted database's owner (not a superuser) can switch to the app role", async () => {
+    // Like Neon or Supabase: the app connects as a user that may create roles
+    // but isn't a superuser. Set the tables up as that user, twice, and switch.
+    const { PGlite } = await import("@electric-sql/pglite");
+    const { SCHEMA, SECURITY } = await import("../lib/server/schema.js");
+    const pg = new PGlite();
+    try {
+      await pg.exec(`CREATE ROLE hosted_owner LOGIN CREATEROLE; GRANT CREATE ON SCHEMA public TO hosted_owner; SET SESSION AUTHORIZATION hosted_owner;`);
+      for (let i = 0; i < 2; i++) { await pg.exec(SCHEMA); await pg.exec(SECURITY); }
+      await pg.transaction(async (t) => {
+        await t.query(`SET LOCAL ROLE scholar_app`);
+        assert.equal((await t.query(`SELECT current_user AS u`)).rows[0].u, "scholar_app");
+        assert.equal((await t.query(`SELECT count(*)::int AS n FROM students`)).rows[0].n, 0);
+      });
+    } finally { await pg.close(); }
+  });
   await check("with no school set, nothing is visible", () => tx(async (q) => {
     await q.query(`SET LOCAL ROLE scholar_app`);
     assert.equal((await q.one(`SELECT count(*)::int AS n FROM students`)).n, 0);
