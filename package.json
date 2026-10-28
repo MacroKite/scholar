@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start -p 5180",
     "db:setup": "node scripts/db.mjs setup",
-    "db:reset": "node scripts/db.mjs reset"
+    "db:reset": "node scripts/db.mjs reset",
+    "test": "node scripts/test-schools.mjs",
+    "school": "node scripts/school.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.11",

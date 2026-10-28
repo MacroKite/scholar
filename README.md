@@ -12,10 +12,11 @@ It has two looks, each with a light and dark mode:
   and a dashboard with a welcome banner, subject progress and a "Coming up"
   column of exams, fees and homework.
 
-It's a Next.js app (JavaScript) backed by Postgres. Everyone signs in with
-their own account. The admin, teachers, and families (a student together
-with their guardian) each see their own pages, and they all share the same
-school data.
+It's a Next.js app (JavaScript) backed by Postgres. One deployment serves
+many schools, each at its own address and with its own data (see **Many
+schools** below). Everyone signs in with their own account at their school.
+The admin, teachers, and families (a student together with their guardian)
+each see their own pages of the same school's data.
 
 Live: https://scholar-six-pied.vercel.app
 
@@ -31,8 +32,8 @@ http://localhost:5180/app (or **Sign in** on the website) for the app.
 
 There's nothing to set up for local use. Without `DATABASE_URL`, the app uses
 PGlite, a full Postgres that runs inside Node and keeps its files in
-`.data/pglite`. The first start creates the tables and fills them with the
-demo school.
+`.data/pglite`. The first start creates the tables and adds the demo school
+(`demo`), which opens at http://localhost:5180.
 
 To use your own Postgres instead, copy `.env.example` to `.env.local` and set
 `DATABASE_URL`.
@@ -41,12 +42,75 @@ To use your own Postgres instead, copy `.env.example` to `.env.local` and set
 | --- | --- |
 | `npm run dev` | Development server on port 5180 |
 | `npm run build` / `npm start` | Production build and server |
-| `npm run db:setup` | Create the tables; seed the demo school if the database is empty |
-| `npm run db:reset` | Wipe everything and seed the demo school again |
+| `npm run db:setup` | Create the tables; add the demo school if the database is empty; list the schools |
+| `npm run db:reset` | Delete every school and start again with just the demo school |
+| `npm test` | Check that schools can't see or change each other's data (uses a temporary database) |
 
 With PGlite, stop `npm run dev` before running the `db:` commands, because
-only one process can open the database at a time. Admins can also reset the
-data from **Settings → Reset demo data** while the app is running.
+only one process can open the database at a time. In a demo school, the admin
+can also reset its data from **Settings → Reset demo data**; a real school
+has no such button.
+
+## Many schools
+
+Every school's data lives in the same tables, each row tagged with its
+school (`school_id`). Each school has its own `admin`, its own student IDs
+and its own receipt numbers.
+
+**Which school a request is for** comes from the address it was sent to:
+
+1. one of the school's own addresses (`schools.hosts`), e.g. `www.adarshahigh.edu.bd`;
+2. `<school id>.<ROOT_DOMAIN>`, e.g. `adarsha.scholar.com.bd`. `ROOT_DOMAIN`
+   defaults to `localhost`, so locally `second.localhost:5180` opens school
+   `second` (browsers send `*.localhost` to your own computer);
+3. otherwise `DEFAULT_SCHOOL`, or the only school if there's just one, so a
+   one-school deployment works at any address.
+
+A school id that doesn't exist, an unknown address when there are several
+schools, or a school whose `status` is `suspended` shows "not found". Sign-in,
+sessions and the sign-in throttle all belong to one school: a session cookie
+from one school's address doesn't work at another's.
+
+**How schools are kept apart.** All school data is read and written inside
+`forSchool(id, fn)` (`lib/server/db.js`): a transaction that sets the school
+and switches to the `scholar_app` database role. Postgres row-level security
+then lets it see and change only that school's rows, and new rows get the
+school automatically. So a query that forgets a school filter still can't
+reach another school's data. `npm test` checks this for reading, for the
+actions that write, for sign-in and for addresses. Only the `schools` table,
+upgrades and SMS delivery use the connecting user's full access.
+
+Row-level security guards against mistakes in Scholar's own queries, not
+against someone running SQL of their own; every query passes values as
+parameters, so nobody can. For extra safety in production, connect with a
+database user that doesn't own the tables.
+
+**Upgrading an older, single-school database** happens by itself on the
+first start: its data becomes one school (id `main`, or `LEGACY_SCHOOL_ID`),
+everyone stays signed in, and nothing is lost if it fails part-way (it runs
+in one transaction). That school isn't a demo, so it can't be reset.
+
+### Running the service: `npm run school`
+
+Schools are created and looked after from the command line, against the
+database in `DATABASE_URL` (or the local PGlite one: stop `npm run dev`
+first). The running app picks up changes within a minute.
+
+| Command | What it does |
+| --- | --- |
+| `npm run school -- list` | Every school: address, students, teachers, accounts set up, last sign-in, SMS |
+| `npm run school -- create adarsha --name "Adarsha High School" --admin "Rokeya Begum" [--email …] [--host www.adarshahigh.edu.bd] [--year 2026]` | A new, empty school, and its admin's one-time activation code |
+| `npm run school -- host <id> --add <address>` / `--remove <address>` | The addresses a school opens at, besides `<id>.<ROOT_DOMAIN>` |
+| `npm run school -- sms <id> --key <api key> --sender <sender id>` / `--clear` | The school's own BulkSMSBD account |
+| `npm run school -- admin-code <id>` | A new code for the school's admin (a forgotten password, or a new principal) |
+| `npm run school -- suspend <id>` / `activate <id>` | Close a school's website and app (e.g. unpaid), signing everyone out; nothing is deleted |
+| `npm run school -- delete <id> --confirm <id>` | Delete the school and all its data, for good |
+
+A new school's admin opens the address the command prints, enters `admin`
+and the code, and picks a password. Then they add classes, teachers and
+students in the app, which gives each teacher and family their own code.
+A new school has no demo logins on its sign-in page and no "Reset demo
+data".
 
 ## School website
 
@@ -229,8 +293,9 @@ The demo school has a session fee in January and a half-yearly exam fee.
 - **Fees & Payments** shows who owes what (by class), every receipt by month,
   and this month's collection. **SMS reminders** texts every guardian who
   owes fees.
-- Families see their dues and receipts, and can pay online (a demo: no money
-  moves).
+- Families see their dues and receipts. In a demo school they can also try
+  paying online (no money moves). A real school has no online payment yet:
+  families pay at the office, which records it with **Collect payment**.
 
 Databases from before this change are moved over automatically: each old
 monthly fee becomes a tuition charge, and each paid month a payment with a
@@ -250,9 +315,12 @@ The **SMS** page (admin) sends messages to guardians' phones:
   characters and SMS parts (a Bangla SMS holds 70 characters, English 160).
 
 Every message is kept in the **outbox** with its status. Messages are sent
-through [BulkSMSBD](https://bulksmsbd.net) only when the server has
-`BULKSMSBD_API_KEY` and `BULKSMSBD_SENDER_ID` set. Without them nothing
-leaves the server, and the outbox marks messages "Not sent". Guardians'
+through [BulkSMSBD](https://bulksmsbd.net): each school through its own
+account and sender name, set with `npm run school -- sms <id> --key … --sender …`.
+A school without one uses the server's `BULKSMSBD_API_KEY` and
+`BULKSMSBD_SENDER_ID`, if set. With neither, nothing leaves the server, and
+the outbox marks messages "Not sent". The app can tell a school has its own
+account, but only the background sender can read the API key. Guardians'
 numbers must be Bangladeshi mobile numbers (01XXXXXXXXX, with or without +88);
 others are marked "No number". Check BulkSMSBD's current API documentation
 for your account: Scholar posts `api_key`, `senderid`, `number` and `message`
